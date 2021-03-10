@@ -9,6 +9,7 @@ import delete_illegal_xml as delxml
 import get_data
 import write_xml as wx
 import mode4_sps as sps
+import two_hop_method as thm
 import cut_file
 from xml.etree import ElementTree as ET
 import parameter
@@ -77,6 +78,7 @@ for x in c:
 time = int(0)
 test = 0
 end_time = int(100000)
+result = []
 error_count = []
 total_count = []
 sec_error_count = []
@@ -103,11 +105,15 @@ for file_count in range(1,4962):
     if len(end_time_list):
         break                           #判斷是否有車輛結束，有的話跳出迴圈
     while time <= int(realtime[-1].text):
+        
+##########################mode 4################################### 
+        """
         for x in c:
             if  int(x.find('time').text)== time:
                 vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
-                
+                 
         result =  sps.mode_main(vec , time)
+
         # print(time , x.find('time').text)
         test += 1
         re_error = re_error + result[2]
@@ -176,10 +182,19 @@ print("total selected counter : " , result[13])
 
 print("RC方法有相同資源的問題 : " , result[14])
 #print(vec)
+"""
+##########################mode 4###################################
 
+##########################two hop###################################
 
+        for x in c:
+            if  int(x.find('time').text)== time:
+                vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
+                 
+        result =  thm.main(vec , time)
+        time = time + 1 
 
-
+##########################two hop###################################
 
 ###simulation###
 
