@@ -201,7 +201,7 @@ def mode_main(vec , time):
     for x in vec_per:
         get_packet_resource(x["id"])
     
-
+    
     for x in vec_per:
         error_boo = 0
         error_boo_tra = 0                           #給計算單台傳輸的boolean
