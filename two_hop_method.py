@@ -2,28 +2,61 @@ import parameter
 from operator import itemgetter
 from math import hypot , ceil
 import random
+import collision_judge as cj
 
 vec_per = []
 vec_all = {}
 vec_back_list = []
+vec_twohop_list = []    #2hop方法最終結果
+sen_all_re = []     #偵測的資源分組
 rc_list = []    #reselected counter 的list
 resource_list = []      #資源list
+error_count = []      #錯誤的數量統計
+total_count = []        #傳輸數量總數
+sec_error_count = []    #一次性的錯誤統計
+sec_total_count = []    #一次性總數統計    
+two_hop_list = []
+twohop_exclude_list = []    #2hop所排除之資源
 
 for x in range(parameter.vec_num*2):    #初始化list
     vec_back_list.insert(x , [])        #初始化後方車輛list
     rc_list.insert(x , 0) 
-
-
+    error_count.insert(x , 0)
+    total_count.insert(x , 0)
+    sec_error_count.insert(x , 0)
+    sec_total_count.insert(x , 0)
+    two_hop_list.insert(x , [])
+    sen_all_re.insert(x , [])
+    resource_list.insert(x , -1)
+    vec_twohop_list.insert(x , [])
+    twohop_exclude_list.insert(x ,[])
+for x in range(parameter.vec_num*2):
+    for y in range(0,10):
+        sen_all_re[x].insert(y , [])
 def main(vec , time):
     
     global vec_all
     global vec_per
     global rc_list
+    global sen_all_re
+    global error_count
+    global total_count
+    global sec_error_count
+    global sec_total_count
+    global two_hop_list
+    global vec_twohop_list
+    global twohop_exclude_list
 
+    if time % 1000 == 0:
+        print(time , " : " )
     vec_all = vec
     add_vec_info()
     get_back_vec(time)
     vec_in_range()
+
+    if time % 100 == 0:
+        two_hop_function()
+        exclude_resource()
 
     for x in vec_per:
         if time % 100 == 0:                         #每100ms判斷要不要重選資源
@@ -32,8 +65,31 @@ def main(vec , time):
         if (x["resource"]//4) == (time%100):        #確認該車輛的資源會不會在這個ms傳輸
             x["tran_boo"] = 1
             rc_list[x["id"]] = rc_list[x["id"]] -1
+
+    for x in vec_per:
+        get_packet_resource(x["id"])
+
+    for x in vec_per:
+        error_boo = 0
+        error_boo_tra = 0                           #給計算單台傳輸的boolean
+        if x["tran_boo"] == 1:
+            for y in x["in_range"]:
+                ###傳輸有錯率###
+                error_boo = cj.error_main(vec_per[y]["packet_resource"] , vec_per[x["id"]]["resource"])
+                if error_boo == 1:
+                    sec_error_count[x["id"]] += 1
+                    if error_boo_tra ==0:
+                        error_boo_tra = 1
+                    
+            if error_boo_tra == 1:
+                error_count[x["id"]] += 1
+
+            total_count[x["id"]] += 1
+            sec_total_count[x["id"]] += len(x["in_range"])
+
+        get_sensing_resource(x["id"])
     vec_per = [] 
-    return 0
+    return error_count , total_count , sec_error_count , sec_total_count
 
 def add_vec_info():
     global vec_per
@@ -53,9 +109,9 @@ def add_vec_info():
                                  "direction" : temp_dir,
                                  "in_range" : [],
                                  "inrange_dis" : {},
-                                #  "sensing_resource" :sen_all_re[int(x)],
-                                #  "packet_resource" : [],
-                                #  "resource" : resource_list[int(x)],
+                                 "sensing_resource" :sen_all_re[int(x)],
+                                 "packet_resource" : [],
+                                 "resource" : resource_list[int(x)],
                                  "tran_boo" : 0,
                                  "reselected_counter" : rc_list[int(x)],
                                  
@@ -64,10 +120,12 @@ def add_vec_info():
                                 })
 
 def get_back_vec(time):
+    global vec_back_list
+    global vec_twohop_list
+    
     for x in range(parameter.vec_num*2):    #初始化list
         vec_back_list.insert(x , [])        #初始化後方車輛list
-    global get_back_vec
-
+    
     for x in vec_per:
         for y in vec_per:
             if x["ypos"] > 2000:    #車輛y座標大於y軸高度
@@ -76,13 +134,15 @@ def get_back_vec(time):
                         if x["xpos"] < y ["xpos"]:
                             vec_back_list[x["id"]].insert(y["id"] , {
                                 "id" : y["id"],
-                                "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"])
+                                "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                "resource" : y["resource"]
                             })
                     else:
                         if x["xpos"] > y["xpos"]:
                             vec_back_list[x["id"]].insert(y["id"] , {
                                 "id" : y["id"],
-                                "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"])
+                                "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                "resource" : y["resource"]
                             })
             elif x["ypos"] < 2000:  #車輛y座標小於y軸高度
                 if x["direction"] == "reserve":
@@ -90,17 +150,21 @@ def get_back_vec(time):
                         if x["xpos"] < y ["xpos"]:
                             vec_back_list[x["id"]].insert(y["id"] , {
                                     "id" : y["id"],
-                                    "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"])
+                                    "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                    "resource" : y["resource"]
                                 })
                         else:
                             if x["xpos"] > y["xpos"]:
                                 vec_back_list[x["id"]].insert(y["id"] , {
                                     "id" : y["id"],
-                                    "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"])
+                                    "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                    "resource" : y["resource"]
                                 })
                                 
         if len(vec_back_list[x["id"]]) > 5: 
-            vec_back_list[x["id"]] = sorted(vec_back_list[x["id"]] , key=itemgetter("dis"))
+            vec_twohop_list[x["id"]] = sorted(vec_back_list[x["id"]] , key=itemgetter("dis"))
+        else :
+            vec_twohop_list = vec_back_list
 
 
 def vec_in_range():     #計算範圍內的車輛
@@ -143,3 +207,45 @@ def select_resource(id):    #選擇資源
     else:
         # print(re_pool)
         resource_list[id] = random.choice(re_pool)  #選擇資源
+
+def get_packet_resource(id):        #新增車輛的資源偵測
+    for x in vec_per[id]["in_range"]:
+        if vec_per[x]["tran_boo"] == 1:
+            vec_per[id]["packet_resource"].insert(x , vec_per[x]["resource"])
+
+
+def get_sensing_resource(vec_id):       #將偵測的資源做分組
+    global sen_all_re
+
+    for x in vec_per[vec_id]["packet_resource"]:
+        if (vec_per[vec_id]["time"])>1000 and (vec_per[vec_id]["time"]%100) ==0:
+            sen_all_re[vec_id][(vec_per[vec_id]["time"]//100) % 10] = []
+
+        if x not in sen_all_re[vec_id][(vec_per[vec_id]["time"]//100) % 10]:
+            sen_all_re[vec_id][(vec_per[vec_id]["time"]//100) % 10].append(x)
+        
+def two_hop_function():     #取的2hop的資源
+    global two_hop_list
+    global vec_back_list
+
+    for x in vec_per:
+        for y in x["in_range"]:
+            if len(vec_twohop_list[y]) >0:
+                for i in vec_back_list[y]:
+                    if i["resource"] not in two_hop_list[x["id"]]:
+                        two_hop_list[x["id"]].append(i["resource"])
+
+def exclude_resource():
+    global vec_per
+
+    for x in vec_per:
+        for y in vec_per:
+            for z in vec_back_list[x["id"]]:
+                if y["id"] == z["id"]:
+                    if x["resource"] in two_hop_list[y["id"]]:
+                        vec_per[x["id"]]["reselected_counter"] = 0
+                    
+                    for i in two_hop_list[y["id"]]:
+                        if i not in twohop_exclude_list[x["id"]]:
+                            twohop_exclude_list[x["id"]].append(i)
+        print(x["id"] , " : "  , twohop_exclude_list[x["id"]])

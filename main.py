@@ -192,6 +192,27 @@ print("RC方法有相同資源的問題 : " , result[14])
                 vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
                  
         result =  thm.main(vec , time)
+
+        if time % 10000 ==0:
+            te=0
+            tt=0
+            ste=0
+            stt=0
+            for x in range(parameter.vec_num*2):
+                te = te + (result[0][x] - temp_error[x])
+                tt = tt + (result[1][x] - temp_total[x])
+                ste = ste + (result[2][x] - sec_temp_error[x])
+                stt = stt + (result[3][x] - sec_temp_total[x])
+                temp_error[x] = result[0][x]
+                temp_total[x] = result[1][x]
+                sec_temp_error[x] = result[2][x]
+                sec_temp_total[x] = result[3][x]
+                
+            if tt !=0:
+                print('te: {} tt: {}\nste: {}  stt:{}'.format(te,tt,ste,stt))
+                print('{} error percent : {:.3f}%'.format(time , float(te)*100/float(tt)))
+                print('{} second error percent : {:.3f}%'.format(time , float(ste)*100/float(stt)))
+
         time = time + 1 
 
 ##########################two hop###################################
