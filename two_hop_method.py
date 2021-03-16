@@ -34,7 +34,7 @@ for x in range(parameter.vec_num*2):
     for y in range(0,10):
         sen_all_re[x].insert(y , [])
 def main(vec , time):
-    
+
     global vec_all
     global vec_per
     global rc_list
@@ -46,6 +46,9 @@ def main(vec , time):
     global two_hop_list
     global vec_twohop_list
     global twohop_exclude_list
+    
+    for x in range(parameter.vec_num*2):
+        twohop_exclude_list.insert(x ,[])
 
     if time % 1000 == 0:
         print(time , " : " )
@@ -206,6 +209,9 @@ def select_resource(id):    #選擇資源
 
     else:
         # print(re_pool)
+        for i in twohop_exclude_list :
+            if i in re_pool:
+                re_pool.remove(i)
         resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
