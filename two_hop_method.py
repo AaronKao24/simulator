@@ -1,9 +1,11 @@
 import parameter
 from operator import itemgetter
-from math import hypot , ceil
+import math
 import random
+from math import hypot , ceil
 import collision_judge as cj
 
+####list zoon####
 vec_per = []
 vec_all = {}
 vec_back_list = []
@@ -17,6 +19,11 @@ sec_error_count = []    #一次性的錯誤統計
 sec_total_count = []    #一次性總數統計    
 two_hop_list = []
 twohop_exclude_list = []    #2hop所排除之資源
+last_xpos = []          #上次的xpos
+last_ypos = []          #上次的ypos
+next_xpos = []          #預測的xpos
+next_ypos = []          #預測的ypos
+
 
 for x in range(parameter.vec_num*2):    #初始化list
     vec_back_list.insert(x , [])        #初始化後方車輛list
@@ -30,9 +37,18 @@ for x in range(parameter.vec_num*2):    #初始化list
     resource_list.insert(x , -1)
     vec_twohop_list.insert(x , [])
     twohop_exclude_list.insert(x ,[])
+    last_xpos.insert(x,[])
+    last_ypos.insert(x,[])
+    next_xpos.insert(x,0)
+    next_ypos.insert(x,0)
+    for i in range (0,15):
+        last_xpos[x].insert(i,0)
+        last_ypos[x].insert(i,0)
 for x in range(parameter.vec_num*2):
     for y in range(0,10):
         sen_all_re[x].insert(y , [])
+
+####list zoon####
 def main(vec , time):
 
     global vec_all
@@ -46,6 +62,8 @@ def main(vec , time):
     global two_hop_list
     global vec_twohop_list
     global twohop_exclude_list
+    global last_xpos
+    global last_ypos
     
     for x in range(parameter.vec_num*2):
         twohop_exclude_list.insert(x ,[])
@@ -58,6 +76,7 @@ def main(vec , time):
     vec_in_range()
 
     if time % 100 == 0:
+        get_next_position()
         two_hop_function()
         exclude_resource()
 
@@ -163,11 +182,7 @@ def get_back_vec(time):
                                     "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                     "resource" : y["resource"]
                                 })
-                                
-        if len(vec_back_list[x["id"]]) > 5: 
-            vec_twohop_list[x["id"]] = sorted(vec_back_list[x["id"]] , key=itemgetter("dis"))
-        else :
-            vec_twohop_list = vec_back_list
+        vec_twohop_list = vec_back_list
 
 
 def vec_in_range():     #計算範圍內的車輛
@@ -233,16 +248,20 @@ def get_sensing_resource(vec_id):       #將偵測的資源做分組
 def two_hop_function():     #取的2hop的資源
     global two_hop_list
     global vec_back_list
+    global last_xpos , last_ypos , next_xpos , next_ypos
 
     for x in vec_per:
         for y in x["in_range"]:
             if len(vec_twohop_list[y]) >0:
                 for i in vec_back_list[y]:
                     if i["resource"] not in two_hop_list[x["id"]]:
-                        two_hop_list[x["id"]].append(i["resource"])
-
+                        if hypot(next_xpos[x["id"]] - next_xpos[y] , next_ypos[x["id"]] - next_ypos[y]) < 300 :
+                            two_hop_list[x["id"]].append(i["resource"])
+        print(x["id"] , " : " , two_hop_list[x["id"]])
+ 
 def exclude_resource():
     global vec_per
+    global last_xpos , last_ypos , next_xpos , next_ypos
 
     for x in vec_per:
         for y in vec_per:
@@ -254,4 +273,20 @@ def exclude_resource():
                     for i in two_hop_list[y["id"]]:
                         if i not in twohop_exclude_list[x["id"]]:
                             twohop_exclude_list[x["id"]].append(i)
-        print(x["id"] , " : "  , twohop_exclude_list[x["id"]])
+
+def get_next_position():
+    global last_xpos , last_ypos , next_xpos , next_ypos
+
+    for x in vec_per:
+        # print(x["id"]," : " , " x:" , last_xpos[x["id"]] , "y: " , last_ypos[x["id"]])
+        nextx = (x["speed"] * 1.5) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nexty = (x["speed"] * 1.5) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        next_xpos[x["id"]] = nextx
+        next_ypos[x["id"]] = nexty
+
+        for i in range(14):
+            last_xpos[x["id"]][i] = last_xpos[x["id"]][i+1]
+            last_ypos[x["id"]][i] = last_ypos[x["id"]][i+1]
+
+        last_xpos[x["id"]][14] = x["xpos"]
+        last_ypos[x["id"]][14] = x["ypos"]       
