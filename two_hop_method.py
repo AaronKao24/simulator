@@ -23,6 +23,7 @@ last_xpos = []          #上次的xpos
 last_ypos = []          #上次的ypos
 next_xpos = []          #預測的xpos
 next_ypos = []          #預測的ypos
+last_speed = []         #上次的速度
 
 
 for x in range(parameter.vec_num*2):    #初始化list
@@ -41,9 +42,11 @@ for x in range(parameter.vec_num*2):    #初始化list
     last_ypos.insert(x,[])
     next_xpos.insert(x,0)
     next_ypos.insert(x,0)
+    last_speed.insert(x , [])
     for i in range (0,15):
         last_xpos[x].insert(i,0)
         last_ypos[x].insert(i,0)
+        last_speed[x].insert(i,0)
 for x in range(parameter.vec_num*2):
     for y in range(0,10):
         sen_all_re[x].insert(y , [])
@@ -257,7 +260,7 @@ def two_hop_function():     #取的2hop的資源
                     if i["resource"] not in two_hop_list[x["id"]]:
                         if hypot(next_xpos[x["id"]] - next_xpos[y] , next_ypos[x["id"]] - next_ypos[y]) < 300 :
                             two_hop_list[x["id"]].append(i["resource"])
-        print(x["id"] , " : " , two_hop_list[x["id"]])
+        # print(x["id"] , " : " , two_hop_list[x["id"]])
  
 def exclude_resource():
     global vec_per
@@ -275,18 +278,20 @@ def exclude_resource():
                             twohop_exclude_list[x["id"]].append(i)
 
 def get_next_position():
-    global last_xpos , last_ypos , next_xpos , next_ypos
+    global last_xpos , last_ypos , next_xpos , next_ypos , last_speed
 
     for x in vec_per:
         # print(x["id"]," : " , " x:" , last_xpos[x["id"]] , "y: " , last_ypos[x["id"]])
-        nextx = (x["speed"] * 1.5) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
-        nexty = (x["speed"] * 1.5) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nextx = ((x["speed"] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nexty = ((x["speed"] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
         next_xpos[x["id"]] = nextx
         next_ypos[x["id"]] = nexty
 
         for i in range(14):
             last_xpos[x["id"]][i] = last_xpos[x["id"]][i+1]
             last_ypos[x["id"]][i] = last_ypos[x["id"]][i+1]
+            last_speed[x["id"]][i] = last_speed[x["id"]][i+1]
 
         last_xpos[x["id"]][14] = x["xpos"]
         last_ypos[x["id"]][14] = x["ypos"]       
+        last_speed[x["id"]][14] = x["speed"]
