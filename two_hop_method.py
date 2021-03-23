@@ -4,6 +4,8 @@ import math
 import random
 from math import hypot , ceil
 import collision_judge as cj
+import rc_method as rm
+import copy
 
 ####list zoon####
 vec_per = []
@@ -24,6 +26,11 @@ last_ypos = []          #上次的ypos
 next_xpos = []          #預測的xpos
 next_ypos = []          #預測的ypos
 last_speed = []         #上次的速度
+rc_resouce = []
+rm_sensing_list = {}
+select_time_list = []
+
+
 
 
 for x in range(parameter.vec_num*2):    #初始化list
@@ -43,6 +50,7 @@ for x in range(parameter.vec_num*2):    #初始化list
     next_xpos.insert(x,0)
     next_ypos.insert(x,0)
     last_speed.insert(x , [])
+    select_time_list.insert(x , 0)
     for i in range (0,15):
         last_xpos[x].insert(i,0)
         last_ypos[x].insert(i,0)
@@ -67,7 +75,10 @@ def main(vec , time):
     global twohop_exclude_list
     global last_xpos
     global last_ypos
-    
+    global rc_resouce
+    global rm_sensing_list
+    global select_time_list
+
     for x in range(parameter.vec_num*2):
         twohop_exclude_list.insert(x ,[])
 
@@ -78,11 +89,106 @@ def main(vec , time):
     get_back_vec(time)
     vec_in_range()
 
+
     if time % 100 == 0:
         get_next_position()
         two_hop_function()
         exclude_resource()
 
+    ###RC method zoon###ss
+    rc_method_list = []
+    del_rc_list = []
+    rm_sensing_list = {}
+    for x in vec_per:
+        if time % 100 == 0:
+            # print(x["reselected_counter"] , parameter.rc_small)
+            # print(type(parameter.rc_small))
+            if x["reselected_counter"] == parameter.rc_small - 1:
+                rc_method_list.insert(x["id"] , {
+                                                    "id" : x["id"],
+                                                    "resource" : x["resource"],
+                                                    "in_range" : x["in_range"],
+                                                    "xpos" : x["xpos"],
+                                                    "ypos" : x["ypos"],
+                                                })
+    # print(rc_method_list)
+    if len(rc_method_list) > 1 :
+        temp_rm_list = []
+        for x in rc_method_list:
+            boo_rc_same = 0
+            for y in rc_method_list:
+                if x["id"] != y["id"]:
+                    if x["resource"] == y["resource"]:
+                        boo_rc_same = 1
+                        break
+            if boo_rc_same == 0:
+                temp_rm_list.append(x)
+        rc_method_list = copy.deepcopy(temp_rm_list)
+
+
+        # print(rc_method_list)
+        temp_rc = rm.rc_method(rc_method_list)
+        for x in temp_rc[0]:
+            rc_resouce.append(x)
+        # print("------------------------------------------")
+        # print(rc_resouce)
+        
+    
+    for x in vec_per:
+        temp_list = []
+        for y in rc_resouce:
+            if y["id"] in x["in_range"] :
+                temp_list.append(y["resource"])
+
+        rm_sensing_list[x["id"]] = temp_list
+    # if time %100 ==0:
+        # print(rm_sensing_list)
+    if time % 100 == 0:
+        temp_same_list = []
+        for x in rc_resouce:
+            boo_rc_same = 0
+            for y in rc_resouce:
+                if x["id"] != y["id"]:
+                    if x["resource"] == y["resource"]:
+                        boo_rc_same = 1
+            if boo_rc_same == 0:
+                temp_same_list.append(x)
+        rc_resouce = copy.deepcopy(temp_same_list)
+    
+
+    for x in vec_per:
+        boo_inlen = 0
+        temp_remo_list = []
+        if time % 100 ==0:
+            if x["reselected_counter"] == 0:
+                if len(rc_resouce) > 0:
+                    for y in rc_resouce:
+                        if x["id"] == y["id"]:
+                            # print(type(y["resource"]))
+                            resource_list[x["id"]] = y["resource"]
+                            rc_ilst[x["id"]] = random.randint(5,15)
+                            del_rc_list.append(x["id"])
+                            temp_remo_list.append(y)
+                            boo_inlen = 1
+                    for y in temp_remo_list:
+                        rc_resouce.remove(y)
+
+                    if x["id"] not in del_rc_list:
+                        # print("x[id] = " , x["id"] , " list : " , del_rc_list)
+                        get_resource(x["id"])
+                        boo_inlen = 1
+                if boo_inlen == 0:
+                    get_resource(x["id"])
+                select_time_list[x["id"]] = time
+        # print(type(x["resource"]))
+        if (x["resource"]//4 == (time%100):
+            x["tran_boo"] = 1
+            rc_list[x["id"]] = rc_list[x["id"]] -1
+
+    # if time % 100 ==0:
+    #     print("end" , rc_resouce , del_rc_list)
+    ###End RC method####
+    """
     for x in vec_per:
         if time % 100 == 0:                         #每100ms判斷要不要重選資源
             if x["reselected_counter"] == 0:
@@ -90,7 +196,7 @@ def main(vec , time):
         if (x["resource"]//4) == (time%100):        #確認該車輛的資源會不會在這個ms傳輸
             x["tran_boo"] = 1
             rc_list[x["id"]] = rc_list[x["id"]] -1
-
+    """
     for x in vec_per:
         get_packet_resource(x["id"])
 
@@ -224,13 +330,19 @@ def select_resource(id):    #選擇資源
             if id_temp != -1:
                 re_pool.append(vec_per[id_temp]["resource"])
                 del vec_per[id]["inrange_dis"][id_temp]
-
-    else:
         # print(re_pool)
-        for i in twohop_exclude_list :
-            if i in re_pool:
-                re_pool.remove(i)
-        resource_list[id] = random.choice(re_pool)  #選擇資源
+
+    ##rc zoon##
+    for x in rm_sensing_list[id]:
+        # print(x)
+        if x in re_pool:
+            re_pool.remove(x)
+    ##rc zoon##
+
+    for i in twohop_exclude_list :
+        if i in re_pool:
+            re_pool.remove(i)
+    resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
     for x in vec_per[id]["in_range"]:
@@ -282,8 +394,8 @@ def get_next_position():
 
     for x in vec_per:
         # print(x["id"]," : " , " x:" , last_xpos[x["id"]] , "y: " , last_ypos[x["id"]])
-        nextx = ((x["speed"] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
-        nexty = ((x["speed"] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nextx = ((last_speed[x["id"]][0] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nexty = ((last_speed[x["id"]][0] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
         next_xpos[x["id"]] = nextx
         next_ypos[x["id"]] = nexty
 
