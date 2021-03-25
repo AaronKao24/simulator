@@ -31,8 +31,6 @@ rm_sensing_list = {}
 select_time_list = []
 
 
-
-
 for x in range(parameter.vec_num*2):    #初始化list
     vec_back_list.insert(x , [])        #初始化後方車輛list
     rc_list.insert(x , 0) 
@@ -60,6 +58,7 @@ for x in range(parameter.vec_num*2):
         sen_all_re[x].insert(y , [])
 
 ####list zoon####
+
 def main(vec , time):
 
     global vec_all
@@ -79,31 +78,33 @@ def main(vec , time):
     global rm_sensing_list
     global select_time_list
 
-    for x in range(parameter.vec_num*2):
-        twohop_exclude_list.insert(x ,[])
-        two_hop_list.insert(x,[])
+
 
     if time % 1000 == 0:
         print(time , " : " )
     vec_all = vec
     add_vec_info()
-    print("add OK")
+    # print("get info")
     if time % 100 == 0:
+        for x in range(parameter.vec_num*2):
+            twohop_exclude_list.insert(x ,[])                           
+            two_hop_list.insert(x,[])
         get_back_vec(time)
-        print("get back OK")
+        # print("get bacck")
     vec_in_range()
-    print("inrange OK")
+    # print("get inrange")
 
 
     if time % 100 == 0:
         get_next_position()
-        print("next OK")
+        # print("get posi")
         two_hop_function()
-        print("twohop OK")
+        # print("get two hop")
         exclude_resource()
-        print("exclude OK")
+        # print("get exclude")
 
-    ###RC method zoon###ss
+    ###RC method zoon###
+    """
     rc_method_list = []
     del_rc_list = []
     rm_sensing_list = {}
@@ -196,6 +197,7 @@ def main(vec , time):
     # if time % 100 ==0:
     #     print("end" , rc_resouce , del_rc_list)
     ###End RC method####
+    
     """
     for x in vec_per:
         if time % 100 == 0:                         #每100ms判斷要不要重選資源
@@ -204,13 +206,12 @@ def main(vec , time):
         if (x["resource"]//4) == (time%100):        #確認該車輛的資源會不會在這個ms傳輸
             x["tran_boo"] = 1
             rc_list[x["id"]] = rc_list[x["id"]] -1
-    """
+    
     for x in vec_per:
         get_packet_resource(x["id"])
     cc = 0
     if time % 1000 == 0:
         for x in resource_list:
-            print(cc , " : " , x)
             cc += 1
     for x in vec_per:
         error_boo = 0
@@ -232,9 +233,9 @@ def main(vec , time):
 
         get_sensing_resource(x["id"])
     vec_per = [] 
-    print(time , " : OK")
+    print(time ," : OK")
     return error_count , total_count , sec_error_count , sec_total_count
-
+    
 def add_vec_info():
     global vec_per
     global vec_all
@@ -346,14 +347,16 @@ def select_resource(id):    #選擇資源
         # print(re_pool)
 
     ##rc zoon##
+    """
     for x in rm_sensing_list[id]:
         # print(x)
         if x in re_pool:
             re_pool.remove(x)
+    """
     ##rc zoon##
 
     for i in twohop_exclude_list[id] :
-        print(id ,  " : ",i)
+        # print(id ,  " : ",i)
         if i in re_pool:
             re_pool.remove(i)
     if len(re_pool) == 0:
@@ -383,17 +386,18 @@ def two_hop_function():     #取的2hop的資源
 
     for x in vec_per:
         for y in x["in_range"]:
-            if len(vec_twohop_list[y]) >0:
-                for i in vec_back_list[y]:
-                    if i["resource"] not in two_hop_list[x["id"]]:
-                        if hypot(next_xpos[x["id"]] - next_xpos[y] , next_ypos[x["id"]] - next_ypos[y]) < 300 :
-                            two_hop_list[x["id"]].append(i["resource"])
+            if x["direction"] == vec_per[y]["direction"]:
+                if len(vec_twohop_list[y]) >0:
+                    for i in vec_back_list[y]:
+                        if i["resource"] not in two_hop_list[x["id"]]:
+                            if hypot(next_xpos[x["id"]] - next_xpos[y] , next_ypos[x["id"]] - next_ypos[y]) < 300 :
+                                two_hop_list[x["id"]].append(i["resource"])
         # print(x["id"] , " : " , two_hop_list[x["id"]])
  
 def exclude_resource():
     global vec_per
     global last_xpos , last_ypos , next_xpos , next_ypos
-
+    
     for x in vec_per:
         for y in vec_per:
             for z in vec_back_list[x["id"]]:

@@ -105,9 +105,67 @@ for file_count in range(1,4962):
     if len(end_time_list):
         break                           #判斷是否有車輛結束，有的話跳出迴圈
     while time <= int(realtime[-1].text):
-        
+##########################two hop###################################
+
+        for x in c:
+            if  int(x.find('time').text)== time:
+                vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
+                 
+        result =  thm.main(vec , time)
+
+        if time % 10000 ==0:
+            te=0
+            tt=0
+            ste=0
+            stt=0
+            for x in range(parameter.vec_num*2):
+                te = te + (result[0][x] - temp_error[x])
+                tt = tt + (result[1][x] - temp_total[x])
+                ste = ste + (result[2][x] - sec_temp_error[x])
+                stt = stt + (result[3][x] - sec_temp_total[x])
+                temp_error[x] = result[0][x]
+                temp_total[x] = result[1][x]
+                sec_temp_error[x] = result[2][x]
+                sec_temp_total[x] = result[3][x]
+                
+            if tt !=0:
+                print('te: {} tt: {}\nste: {}  stt:{}'.format(te,tt,ste,stt))
+                print('{} error percent : {:.3f}%'.format(time , float(te)*100/float(tt)))
+                print('{} second error percent : {:.3f}%'.format(time , float(ste)*100/float(stt)))
+
+        time = time + 1 
+#######最後一波檢測#########
+te=0
+tt=0
+for x in range(parameter.vec_num*2):
+    te = te + (result[0][x] - temp_error[x])
+    tt = tt + (result[1][x] - temp_total[x])
+    temp_error[x] = result[0][x]
+    temp_total[x] = result[1][x]
+if tt != 0:
+    print('{} error percent : {:.3f}%'.format(time , float(te)*100/float(tt)))
+######最後一波檢測#########
+error_count = result[0]
+total_count = result[1]
+sec_error_count = result[2]
+sec_total_count = result[3]
+
+for x in range(parameter.vec_num*2):
+    all_error = all_error + error_count[x]
+    all_total = all_total + total_count[x]
+    all_sec_error += sec_error_count[x]
+    all_sec_total += sec_total_count[x]
+    if total_count[x]>0:
+        print('{} : {:.3f}%'.format(x , float(error_count[x])*100 / float(total_count[x])))
+print('total error percent : {:.3f}%'.format(float(all_error)*100/float(all_total)))
+print('total error percent : {:.3f}%'.format(float(all_sec_error)*100/float(all_sec_total)))
+##########################two hop###################################
+
+
 ##########################mode 4################################### 
-        """
+
+"""
+
         for x in c:
             if  int(x.find('time').text)== time:
                 vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
@@ -183,39 +241,9 @@ print("total selected counter : " , result[13])
 print("RC方法有相同資源的問題 : " , result[14])
 #print(vec)
 """
-##########################mode 4###################################
+##########################mode 4################################### 
 
-##########################two hop###################################
 
-        for x in c:
-            if  int(x.find('time').text)== time:
-                vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
-                 
-        result =  thm.main(vec , time)
-
-        if time % 10000 ==0:
-            te=0
-            tt=0
-            ste=0
-            stt=0
-            for x in range(parameter.vec_num*2):
-                te = te + (result[0][x] - temp_error[x])
-                tt = tt + (result[1][x] - temp_total[x])
-                ste = ste + (result[2][x] - sec_temp_error[x])
-                stt = stt + (result[3][x] - sec_temp_total[x])
-                temp_error[x] = result[0][x]
-                temp_total[x] = result[1][x]
-                sec_temp_error[x] = result[2][x]
-                sec_temp_total[x] = result[3][x]
-                
-            if tt !=0:
-                print('te: {} tt: {}\nste: {}  stt:{}'.format(te,tt,ste,stt))
-                print('{} error percent : {:.3f}%'.format(time , float(te)*100/float(tt)))
-                print('{} second error percent : {:.3f}%'.format(time , float(ste)*100/float(stt)))
-
-        time = time + 1 
-
-##########################two hop###################################
 
 ###simulation###
 
