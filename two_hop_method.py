@@ -81,19 +81,27 @@ def main(vec , time):
 
     for x in range(parameter.vec_num*2):
         twohop_exclude_list.insert(x ,[])
+        two_hop_list.insert(x,[])
 
     if time % 1000 == 0:
         print(time , " : " )
     vec_all = vec
     add_vec_info()
-    get_back_vec(time)
+    print("add OK")
+    if time % 100 == 0:
+        get_back_vec(time)
+        print("get back OK")
     vec_in_range()
+    print("inrange OK")
 
 
     if time % 100 == 0:
         get_next_position()
+        print("next OK")
         two_hop_function()
+        print("twohop OK")
         exclude_resource()
+        print("exclude OK")
 
     ###RC method zoon###ss
     rc_method_list = []
@@ -166,7 +174,7 @@ def main(vec , time):
                         if x["id"] == y["id"]:
                             # print(type(y["resource"]))
                             resource_list[x["id"]] = y["resource"]
-                            rc_ilst[x["id"]] = random.randint(5,15)
+                            rc_list[x["id"]] = random.randint(5,15)
                             del_rc_list.append(x["id"])
                             temp_remo_list.append(y)
                             boo_inlen = 1
@@ -181,10 +189,10 @@ def main(vec , time):
                     get_resource(x["id"])
                 select_time_list[x["id"]] = time
         # print(type(x["resource"]))
-        if (x["resource"]//4 == (time%100):
+    
+        if (x["resource"]//4) == (time%100):        #確認該車輛的資源會不會在這個ms傳輸
             x["tran_boo"] = 1
             rc_list[x["id"]] = rc_list[x["id"]] -1
-
     # if time % 100 ==0:
     #     print("end" , rc_resouce , del_rc_list)
     ###End RC method####
@@ -199,7 +207,11 @@ def main(vec , time):
     """
     for x in vec_per:
         get_packet_resource(x["id"])
-
+    cc = 0
+    if time % 1000 == 0:
+        for x in resource_list:
+            print(cc , " : " , x)
+            cc += 1
     for x in vec_per:
         error_boo = 0
         error_boo_tra = 0                           #給計算單台傳輸的boolean
@@ -220,6 +232,7 @@ def main(vec , time):
 
         get_sensing_resource(x["id"])
     vec_per = [] 
+    print(time , " : OK")
     return error_count , total_count , sec_error_count , sec_total_count
 
 def add_vec_info():
@@ -263,14 +276,14 @@ def get_back_vec(time):
                 if y["direction"] == x["direction"]:    #判斷同方向
                     if x["direction"] == "forward":     #若正向 則 小於比較對象為先行車
                         if x["xpos"] < y ["xpos"]:
-                            vec_back_list[x["id"]].insert(y["id"] , {
+                            vec_back_list[x["id"]].append( {
                                 "id" : y["id"],
                                 "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                 "resource" : y["resource"]
                             })
                     else:
                         if x["xpos"] > y["xpos"]:
-                            vec_back_list[x["id"]].insert(y["id"] , {
+                            vec_back_list[x["id"]].append( {
                                 "id" : y["id"],
                                 "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                 "resource" : y["resource"]
@@ -279,19 +292,19 @@ def get_back_vec(time):
                 if x["direction"] == "reserve":
                     if y["direction"] == x["direction"]:    #判斷同方向
                         if x["xpos"] < y ["xpos"]:
-                            vec_back_list[x["id"]].insert(y["id"] , {
+                            vec_back_list[x["id"]].append({
                                     "id" : y["id"],
                                     "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                     "resource" : y["resource"]
                                 })
                         else:
                             if x["xpos"] > y["xpos"]:
-                                vec_back_list[x["id"]].insert(y["id"] , {
+                                vec_back_list[x["id"]].append({
                                     "id" : y["id"],
                                     "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                     "resource" : y["resource"]
                                 })
-        vec_twohop_list = vec_back_list
+        vec_twohop_list = copy.deepcopy(vec_back_list)
 
 
 def vec_in_range():     #計算範圍內的車輛
@@ -339,9 +352,12 @@ def select_resource(id):    #選擇資源
             re_pool.remove(x)
     ##rc zoon##
 
-    for i in twohop_exclude_list :
+    for i in twohop_exclude_list[id] :
+        print(id ,  " : ",i)
         if i in re_pool:
             re_pool.remove(i)
+    if len(re_pool) == 0:
+        print("empty")
     resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
