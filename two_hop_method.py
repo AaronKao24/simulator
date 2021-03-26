@@ -273,38 +273,39 @@ def get_back_vec(time):
     
     for x in vec_per:
         for y in vec_per:
-            if x["ypos"] > 2000:    #車輛y座標大於y軸高度
-                if y["direction"] == x["direction"]:    #判斷同方向
-                    if x["direction"] == "forward":     #若正向 則 小於比較對象為先行車
-                        if x["xpos"] < y ["xpos"]:
-                            vec_back_list[x["id"]].append( {
-                                "id" : y["id"],
-                                "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                "resource" : y["resource"]
-                            })
-                    else:
-                        if x["xpos"] > y["xpos"]:
-                            vec_back_list[x["id"]].append( {
-                                "id" : y["id"],
-                                "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                "resource" : y["resource"]
-                            })
-            elif x["ypos"] < 2000:  #車輛y座標小於y軸高度
-                if x["direction"] == "reserve":
+            if y["id"] in x["in_range"]:
+                if x["ypos"] > 2000:    #車輛y座標大於y軸高度
                     if y["direction"] == x["direction"]:    #判斷同方向
-                        if x["xpos"] < y ["xpos"]:
-                            vec_back_list[x["id"]].append({
+                        if x["direction"] == "forward":     #若正向 則 小於比較對象為先行車
+                            if x["xpos"] < y ["xpos"]:
+                                vec_back_list[x["id"]].append( {
                                     "id" : y["id"],
                                     "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                     "resource" : y["resource"]
                                 })
                         else:
                             if x["xpos"] > y["xpos"]:
-                                vec_back_list[x["id"]].append({
+                                vec_back_list[x["id"]].append( {
                                     "id" : y["id"],
                                     "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                     "resource" : y["resource"]
                                 })
+                elif x["ypos"] < 2000:  #車輛y座標小於y軸高度
+                    if x["direction"] == "reserve":
+                        if y["direction"] == x["direction"]:    #判斷同方向
+                            if x["xpos"] < y ["xpos"]:
+                                vec_back_list[x["id"]].append({
+                                        "id" : y["id"],
+                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                        "resource" : y["resource"]
+                                    })
+                            else:
+                                if x["xpos"] > y["xpos"]:
+                                    vec_back_list[x["id"]].append({
+                                        "id" : y["id"],
+                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                        "resource" : y["resource"]
+                                    })
         vec_twohop_list = copy.deepcopy(vec_back_list)
 
 
@@ -330,6 +331,8 @@ def select_resource(id):    #選擇資源
         for y in range(0,9):    #假設資源在1000感應內
             if x in vec_per[id]["sensing_resource"][y]:
                 add_boo = 0
+            if x in twohop_exclude_list[id]:
+                add_boo = 0
         if add_boo == 1:
             re_pool.append(x)
     if len(re_pool) < 400 * 0.2:    #資源少於全部20%  增加到20%
@@ -354,13 +357,7 @@ def select_resource(id):    #選擇資源
             re_pool.remove(x)
     """
     ##rc zoon##
-
-    for i in twohop_exclude_list[id] :
-        # print(id ,  " : ",i)
-        if i in re_pool:
-            re_pool.remove(i)
-    if len(re_pool) == 0:
-        print("empty")
+    
     resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
