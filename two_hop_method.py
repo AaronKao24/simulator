@@ -272,40 +272,40 @@ def get_back_vec(time):
         vec_back_list.insert(x , [])        #初始化後方車輛list
     
     for x in vec_per:
-        for y in vec_per:
-            if y["id"] in x["in_range"]:
-                if x["ypos"] > 2000:    #車輛y座標大於y軸高度
-                    if y["direction"] == x["direction"]:    #判斷同方向
-                        if x["direction"] == "forward":     #若正向 則 小於比較對象為先行車
-                            if x["xpos"] < y ["xpos"]:
+            for y in x["in_range"]:
+                if x["ypos"] > 2000:    #車輛y座標大於x軸高度
+                    if x["direction"] == vec_per[y]["direction"]:
+                        if x["direction"] == "forward":
+                            if x["xpos"] < y["xpos"]:
                                 vec_back_list[x["id"]].append( {
-                                    "id" : y["id"],
-                                    "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                    "resource" : y["resource"]
-                                })
-                        else:
+                                        "id" : y["id"],
+                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                        "resource" : y["resource"]
+                                    })
+                        elif x["direction"] == "reserve":
                             if x["xpos"] > y["xpos"]:
                                 vec_back_list[x["id"]].append( {
-                                    "id" : y["id"],
-                                    "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                    "resource" : y["resource"]
-                                })
-                elif x["ypos"] < 2000:  #車輛y座標小於y軸高度
-                    if x["direction"] == "reserve":
-                        if y["direction"] == x["direction"]:    #判斷同方向
-                            if x["xpos"] < y ["xpos"]:
-                                vec_back_list[x["id"]].append({
+                                        "id" : y["id"],
+                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
+                                        "resource" : y["resource"]
+                                    }) 
+                elif x["ypos"] < 2000:
+                    if x["direction"] == vec_per[y]["direction"]:
+                        if x["direction"] == "reserve":
+                            if x["xpos"] < y["xpos"]:
+                                vec_back_list[x["id"]].append( {
                                         "id" : y["id"],
                                         "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                         "resource" : y["resource"]
                                     })
-                            else:
-                                if x["xpos"] > y["xpos"]:
-                                    vec_back_list[x["id"]].append({
+                        elif x["direction"] == "forward":
+                            if x["xpos"] > y["xpos"]:
+                                vec_back_list[x["id"]].append( {
                                         "id" : y["id"],
                                         "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
                                         "resource" : y["resource"]
-                                    })
+                                    }) 
+                        
         vec_twohop_list = copy.deepcopy(vec_back_list)
 
 
