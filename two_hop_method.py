@@ -85,16 +85,19 @@ def main(vec , time):
     vec_all = vec
     add_vec_info()
     # print("get info")
+    vec_in_range()
+    # print("get inrange")
     if time % 100 == 0:
         for x in range(parameter.vec_num*2):
             twohop_exclude_list.insert(x ,[])                           
             two_hop_list.insert(x,[])
         get_back_vec(time)
         # print("get bacck")
-    vec_in_range()
-    # print("get inrange")
 
-
+    if time % 100 == 0:
+        f = open("check.text" , 'a')
+        print(time , " : " ,file = f)
+        f.close()
     if time % 100 == 0:
         get_next_position()
         # print("get posi")
@@ -199,6 +202,7 @@ def main(vec , time):
     ###End RC method####
     
     """
+
     for x in vec_per:
         if time % 100 == 0:                         #每100ms判斷要不要重選資源
             if x["reselected_counter"] == 0:
@@ -233,7 +237,7 @@ def main(vec , time):
 
         get_sensing_resource(x["id"])
     vec_per = [] 
-    print(time ," : OK")
+    # print(time ," : OK")
     return error_count , total_count , sec_error_count , sec_total_count
     
 def add_vec_info():
@@ -276,38 +280,38 @@ def get_back_vec(time):
                 if x["ypos"] > 2000:    #車輛y座標大於x軸高度
                     if x["direction"] == vec_per[y]["direction"]:
                         if x["direction"] == "forward":
-                            if x["xpos"] < y["xpos"]:
+                            if x["xpos"] < vec_per[y]["xpos"]:
                                 vec_back_list[x["id"]].append( {
-                                        "id" : y["id"],
-                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                        "resource" : y["resource"]
+                                        "id" : y,
+                                        "dis" : hypot(x["xpos"] - vec_per[y]["xpos"] , x["ypos"] - vec_per[y]["ypos"]),
+                                        "resource" : vec_per[y]["resource"]
                                     })
                         elif x["direction"] == "reserve":
-                            if x["xpos"] > y["xpos"]:
+                            if x["xpos"] > vec_per[y]["xpos"]:
                                 vec_back_list[x["id"]].append( {
-                                        "id" : y["id"],
-                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                        "resource" : y["resource"]
+                                        "id" : y,
+                                        "dis" : hypot(x["xpos"] - vec_per[y]["xpos"] , x["ypos"] - vec_per[y]["ypos"]),
+                                        "resource" : vec_per[y]["resource"]
                                     }) 
                 elif x["ypos"] < 2000:
                     if x["direction"] == vec_per[y]["direction"]:
                         if x["direction"] == "reserve":
-                            if x["xpos"] < y["xpos"]:
+                            if x["xpos"] < vec_per[y]["xpos"]:
                                 vec_back_list[x["id"]].append( {
-                                        "id" : y["id"],
-                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                        "resource" : y["resource"]
+                                        "id" : y,
+                                        "dis" : hypot(x["xpos"] - vec_per[y]["xpos"] , x["ypos"] - vec_per[y]["ypos"]),
+                                        "resource" : vec_per[y]["resource"]
                                     })
                         elif x["direction"] == "forward":
-                            if x["xpos"] > y["xpos"]:
+                            if x["xpos"] > vec_per[y]["xpos"]:
                                 vec_back_list[x["id"]].append( {
-                                        "id" : y["id"],
-                                        "dis" : hypot(x["xpos"] - y["xpos"] , x["ypos"] - y["ypos"]),
-                                        "resource" : y["resource"]
+                                        "id" : y,
+                                        "dis" : hypot(x["xpos"] - vec_per[y]["xpos"] , x["ypos"] - vec_per[y]["ypos"]),
+                                        "resource" : vec_per[y]["resource"]
                                     }) 
                         
-        vec_twohop_list = copy.deepcopy(vec_back_list)
-
+    vec_twohop_list = copy.deepcopy(vec_back_list)
+    
 
 def vec_in_range():     #計算範圍內的車輛
     for x in range(0 , len(vec_per)) :
@@ -330,8 +334,6 @@ def select_resource(id):    #選擇資源
         add_boo = 1
         for y in range(0,9):    #假設資源在1000感應內
             if x in vec_per[id]["sensing_resource"][y]:
-                add_boo = 0
-            if x in twohop_exclude_list[id]:
                 add_boo = 0
         if add_boo == 1:
             re_pool.append(x)
@@ -357,7 +359,13 @@ def select_resource(id):    #選擇資源
             re_pool.remove(x)
     """
     ##rc zoon##
-    
+    f = open("check.text" , "a")
+    print(id , " : exl : " , len(twohop_exclude_list[id]) , "  pool : " , len(re_pool) , file = f)
+    f.close()
+    for i in re_pool:
+        if i in twohop_exclude_list[id]:
+            re_pool.remove(i)
+
     resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
@@ -405,14 +413,15 @@ def exclude_resource():
                     for i in two_hop_list[y["id"]]:
                         if i not in twohop_exclude_list[x["id"]]:
                             twohop_exclude_list[x["id"]].append(i)
-
+        
+        
 def get_next_position():
     global last_xpos , last_ypos , next_xpos , next_ypos , last_speed
 
     for x in vec_per:
         # print(x["id"]," : " , " x:" , last_xpos[x["id"]] , "y: " , last_ypos[x["id"]])
-        nextx = ((last_speed[x["id"]][0] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
-        nexty = ((last_speed[x["id"]][0] * 1.5) + ((x["speed"]-last_speed[x["id"]][0])*0.75)) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nextx = ((last_speed[x["id"]][0] * 0.5) + ((x["speed"]-last_speed[x["id"]][0])*0.25)) * ((x["xpos"] - last_xpos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
+        nexty = ((last_speed[x["id"]][0] * 0.5) + ((x["speed"]-last_speed[x["id"]][0])*0.25)) * ((x["ypos"] - last_ypos[x["id"]][0])**2 / (hypot(x["xpos"] - last_xpos[x["id"]][0], x["ypos"] - last_ypos[x["id"]][0]))**2)
         next_xpos[x["id"]] = nextx
         next_ypos[x["id"]] = nexty
 
