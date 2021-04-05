@@ -258,6 +258,7 @@ def add_vec_info():
                                  "direction" : temp_dir,
                                  "in_range" : [],
                                  "inrange_dis" : {},
+                                 "resource_dis" : [ 0 for i in range(400)],
                                  "sensing_resource" :sen_all_re[int(x)],
                                  "packet_resource" : [],
                                  "resource" : resource_list[int(x)],
@@ -267,7 +268,6 @@ def add_vec_info():
                                 #  "select_time" : select_time_list[int(x)],
                                  
                                 })
-
 def get_back_vec(time):
     global vec_back_list
     global vec_twohop_list
@@ -314,9 +314,13 @@ def get_back_vec(time):
     
 
 def vec_in_range():     #計算範圍內的車輛
+
     for x in range(0 , len(vec_per)) :
         for y in range(0 , len(vec_per)):
             dis = hypot(vec_per[y]["xpos"] - vec_per[x]["xpos"] , vec_per[y]["ypos"] - vec_per[x]["ypos"])
+            if dis > vec_per[x]["resource_dis"][vec_per[y]["resource"]]:
+                vec_per[x]["resource_dis"][vec_per[y]["resource"]] = dis
+
             if 0< dis < 300 :
                 vec_per[x]["in_range"].append(y)
                 vec_per[x]["inrange_dis"][y] = dis
@@ -328,6 +332,7 @@ def get_resource(id):     #取得資源且重置RC
 
 def select_resource(id):    #選擇資源
     re_pool = []
+    resource_enough = []
     resource_list[id] = -1
 
     for x in range(0,400):      #將所有資源做判斷能否進入待選list
@@ -338,18 +343,21 @@ def select_resource(id):    #選擇資源
         if add_boo == 1:
             re_pool.append(x)
     if len(re_pool) < 400 * 0.2:    #資源少於全部20%  增加到20%
-        for x in range(ceil(400*0.2) - len(re_pool)):
-            sort_temp = 0
-            id_temp = -1
-            for y in vec_per[id]["inrange_dis"].keys():
-                if vec_per[y]["resource"] not in re_pool: 
-                    if vec_per[id]["inrange_dis"][y] > sort_temp:
-                        sort_temp = vec_per[id]["inrange_dis"][y]
-                        id_temp = y
-            if id_temp != -1:
-                re_pool.append(vec_per[id_temp]["resource"])
-                del vec_per[id]["inrange_dis"][id_temp]
-        # print(re_pool)
+            
+        for i in range(400):
+            if i not in re_pool:
+                if len(resource_enough) < ceil(400*0.2) - len(re_pool):
+                    resource_enough.append(i)
+                elif len(resource_enough) > ceil(400*0.2) - len(re_pool):
+                    for j in resource_enough:
+                        if vec_per[id]["resource_dis"][j] < vec_per[id]["resource_dis"][i]:
+                            
+                            resource_enough.remove(j)
+                            resource_enough.append(i)
+                            break
+        
+        for i in resource_enough:
+            re_pool.append(i)
 
     ##rc zoon##
     """
@@ -359,6 +367,7 @@ def select_resource(id):    #選擇資源
             re_pool.remove(x)
     """
     ##rc zoon##
+    
     f = open("check.text" , "a")
     print(id , " : exl : " , len(twohop_exclude_list[id]) , "  pool : " , len(re_pool) , file = f)
     f.close()
