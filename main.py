@@ -13,6 +13,7 @@ import two_hop_method as thm
 import cut_file
 from xml.etree import ElementTree as ET
 import parameter
+import os
 
 
 
@@ -74,6 +75,8 @@ for x in c:
 """
 
 ###simulation###
+
+os.remove("check.text")
 
 time = int(0)
 test = 0

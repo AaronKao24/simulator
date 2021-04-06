@@ -324,7 +324,7 @@ def vec_in_range():     #計算範圍內的車輛
             if 0< dis < 300 :
                 vec_per[x]["in_range"].append(y)
                 vec_per[x]["inrange_dis"][y] = dis
-
+    
 def get_resource(id):     #取得資源且重置RC
     if vec_per[id]["reselected_counter"] == 0 :     #當RC=0後重新選擇
         select_resource(id)
@@ -342,6 +342,13 @@ def select_resource(id):    #選擇資源
                 add_boo = 0
         if add_boo == 1:
             re_pool.append(x)
+    f = open("check.text" , "a")
+    print(id , " : exl : " , len(twohop_exclude_list[id]) , "  pool : " , len(re_pool) , file = f)
+    f.close()
+    for i in re_pool:
+        if i in twohop_exclude_list[id]:
+            re_pool.remove(i)
+    
     if len(re_pool) < 400 * 0.2:    #資源少於全部20%  增加到20%
             
         for i in range(400):
@@ -367,14 +374,6 @@ def select_resource(id):    #選擇資源
             re_pool.remove(x)
     """
     ##rc zoon##
-    
-    f = open("check.text" , "a")
-    print(id , " : exl : " , len(twohop_exclude_list[id]) , "  pool : " , len(re_pool) , file = f)
-    f.close()
-    for i in re_pool:
-        if i in twohop_exclude_list[id]:
-            re_pool.remove(i)
-
     resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
@@ -400,12 +399,14 @@ def two_hop_function():     #取的2hop的資源
 
     for x in vec_per:
         for y in x["in_range"]:
-            if x["direction"] == vec_per[y]["direction"]:
-                if len(vec_twohop_list[y]) >0:
-                    for i in vec_back_list[y]:
-                        if i["resource"] not in two_hop_list[x["id"]]:
-                            if hypot(next_xpos[x["id"]] - next_xpos[y] , next_ypos[x["id"]] - next_ypos[y]) < 300 :
-                                two_hop_list[x["id"]].append(i["resource"])
+            for z in vec_back_list[x["id"]]:
+                if y == z["id"]:
+                    if x["direction"] == vec_per[y]["direction"]:
+                        if len(vec_twohop_list[y]) >0:
+                            for i in vec_back_list[y]:
+                                if i["resource"] not in two_hop_list[x["id"]]:
+                                    if hypot(next_xpos[x["id"]] - next_xpos[y] , next_ypos[x["id"]] - next_ypos[y]) < 300 :
+                                        two_hop_list[x["id"]].append(i["resource"])
         # print(x["id"] , " : " , two_hop_list[x["id"]])
  
 def exclude_resource():
@@ -413,15 +414,22 @@ def exclude_resource():
     global last_xpos , last_ypos , next_xpos , next_ypos
     
     for x in vec_per:
-        for y in vec_per:
-            for z in vec_back_list[x["id"]]:
-                if y["id"] == z["id"]:
-                    if x["resource"] in two_hop_list[y["id"]]:
-                        vec_per[x["id"]]["reselected_counter"] = 0
+        for y in x["in_range"]:
+            if x["resource"] in vec_twohop_list[y]:
+                vec_per[x["id"]]["reselected_counter"] = 0
+            
+            for i in two_hop_list[y]:
+                if i not in twohop_exclude_list[x["id"]]:
+                    twohop_exclude_list[x["id"]].append(i)
+        # for y in vec_per:
+        #     for z in x["in_range"]:
+        #         if y["id"] == z:
+        #             if x["resource"] in two_hop_list[y["id"]]:
+        #                 vec_per[x["id"]]["reselected_counter"] = 0
                     
-                    for i in two_hop_list[y["id"]]:
-                        if i not in twohop_exclude_list[x["id"]]:
-                            twohop_exclude_list[x["id"]].append(i)
+        #             for i in two_hop_list[y["id"]]:
+        #                 if i not in twohop_exclude_list[x["id"]]:
+        #                     twohop_exclude_list[x["id"]].append(i)
         
         
 def get_next_position():
