@@ -306,7 +306,18 @@ def select_resource(vec_id):
         
         for i in resource_enough:
             re_pool.append(i)
-
+    else :
+        for i in re_pool:
+            if len(resource_enough) < ceil(400*0.2):
+                resource_enough.append(i)
+            elif len(resource_enough) > ceil(400*0.2):
+                for j in resource_enough:
+                        if vec_per[id]["resource_dis"][j] < vec_per[id]["resource_dis"][i]:
+                            
+                            resource_enough.remove(j)
+                            resource_enough.append(i)
+                            break
+        re_pool = copy.deepcopy(resource_enough)
     """
     for x in rm_sensing_list[vec_id]:
         # print(x)

@@ -107,7 +107,7 @@ def main(vec , time):
         # print("get exclude")
 
     ###RC method zoon###
-    """
+    
     rc_method_list = []
     del_rc_list = []
     rm_sensing_list = {}
@@ -210,7 +210,7 @@ def main(vec , time):
         if (x["resource"]//4) == (time%100):        #確認該車輛的資源會不會在這個ms傳輸
             x["tran_boo"] = 1
             rc_list[x["id"]] = rc_list[x["id"]] -1
-    
+    """
     for x in vec_per:
         get_packet_resource(x["id"])
     cc = 0
@@ -342,9 +342,7 @@ def select_resource(id):    #選擇資源
                 add_boo = 0
         if add_boo == 1:
             re_pool.append(x)
-    f = open("check.text" , "a")
-    print(id , " : exl : " , len(twohop_exclude_list[id]) , "  pool : " , len(re_pool) , file = f)
-    f.close()
+    
     for i in re_pool:
         if i in twohop_exclude_list[id]:
             re_pool.remove(i)
@@ -365,15 +363,29 @@ def select_resource(id):    #選擇資源
         
         for i in resource_enough:
             re_pool.append(i)
-
+    else :
+        for i in re_pool:
+            if len(resource_enough) < ceil(400*0.2):
+                resource_enough.append(i)
+            elif len(resource_enough) > ceil(400*0.2):
+                for j in resource_enough:
+                        if vec_per[id]["resource_dis"][j] < vec_per[id]["resource_dis"][i]:
+                            
+                            resource_enough.remove(j)
+                            resource_enough.append(i)
+                            break
+        re_pool = copy.deepcopy(resource_enough)
     ##rc zoon##
-    """
+    
     for x in rm_sensing_list[id]:
         # print(x)
         if x in re_pool:
             re_pool.remove(x)
-    """
+    
     ##rc zoon##
+    f = open("check.text" , "a")
+    print(id , " : exl : " , len(twohop_exclude_list[id]) , "  pool : " , len(re_pool) , file = f)
+    f.close()
     resource_list[id] = random.choice(re_pool)  #選擇資源
 
 def get_packet_resource(id):        #新增車輛的資源偵測
