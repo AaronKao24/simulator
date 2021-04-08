@@ -18,21 +18,29 @@ for x in range(parameter.vec_num*2):    #初始化list
 def main(vec , time):
     
     vec_all = vec
-    add_vec_info()
-    vec_in_range()
-    infront_vec()
+    vec_per = add_vec_info(vec_all)
     
+    for x in vec_per :
+        print(len(vec_per))
+        inrange_information = vec_in_range(x , vec_per)
 
-def add_vec_info():
-    global vec_per
-    global vec_all
+        x["in_range"] = inrange_information[0]
+        x["inrange_dis"] = inrange_information[1]
+        # print(x["id"])
+        # print(x["in_range"])
+        # print(x["inrange_dis"])
+    
+    vec_per = []
+    print(len(vec_per))
+
+def add_vec_info(vec_all):
+
     for x in vec_all:
         if int(x) % 2 == 0:
             temp_dir = "forward"
         else :
             temp_dir = "reserve"
         vec_per.insert(int(x) , {
-
                                  "id" : int(x) ,
                                  "time" : int(float(vec_all[x][3])),
                                  "speed" : float(vec_all[x][0]),
@@ -50,8 +58,10 @@ def add_vec_info():
                                 #  "resource" : resource_list[int(x)],
                                 #  "tran_boo" : 0,
                                 #  "reselected_counter" : rc_list[int(x)],                                 
-                                })
+                                }
+                                )
 
+    return vec_per
 def infront_vec():
     global vec_per
 
@@ -103,14 +113,17 @@ def get_method_parameter(id):
     vec_per[id]["ave_speed"] = temp_speed / len(vec_per[id]["in_range"]) + 1
     his_ave_speed[id] = (his_ave_speed[id] + vec_per[id]["ave_speed"]) / his_times[id]              #計算算術平均速度
 
-def vec_in_range():     #計算範圍內的車輛
-    for x in range(0 , len(vec_per)) :
-        for y in range(0 , len(vec_per)):
-            dis = hypot(vec_per[y]["xpos"] - vec_per[x]["xpos"] , vec_per[y]["ypos"] - vec_per[x]["ypos"])
-            if 0< dis < 300 :
-                vec_per[x]["in_range"].append(y)
-                vec_per[x]["inrange_dis"][y] = dis
+def vec_in_range(vec_cur , vec_per):     #計算範圍內的車輛
 
+    inragne_list = []
+    inrange_dis = {}
+    for y in range(0 , len(vec_per)):
+        dis = hypot(vec_per[y]["xpos"] - vec_cur["xpos"] , vec_per[y]["ypos"] - vec_cur["ypos"])
+        if 0< dis < 300 :
+            inragne_list.append(y)
+            inrange_dis[y]= dis
+
+    return inragne_list , inrange_dis
 
 def status_judge():
     print("這邊放公式")

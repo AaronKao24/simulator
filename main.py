@@ -14,7 +14,7 @@ import cut_file
 from xml.etree import ElementTree as ET
 import parameter
 import os
-
+import dynamic_method as dym
 
 
 
@@ -76,7 +76,7 @@ for x in c:
 
 ###simulation###
 
-os.remove("check.text")
+# os.remove("check.text")
 
 time = int(0)
 test = 0
@@ -108,8 +108,22 @@ for file_count in range(1,4962):
     if len(end_time_list):
         break                           #判斷是否有車輛結束，有的話跳出迴圈
     while time <= int(realtime[-1].text):
-##########################two hop###################################
 
+
+########################## dymnamic method ################################### 
+    
+        for x in c:
+                if  int(x.find('time').text)== time:
+                    vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
+                    
+        result =  dym.main(vec , time)
+        time = time +1
+
+
+########################## dymnamic method ################################### 
+
+##########################two hop###################################
+        """
         for x in c:
             if  int(x.find('time').text)== time:
                 vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
@@ -162,6 +176,7 @@ for x in range(parameter.vec_num*2):
         print('{} : {:.3f}%'.format(x , float(error_count[x])*100 / float(total_count[x])))
 print('total error percent : {:.3f}%'.format(float(all_error)*100/float(all_total)))
 print('total error percent : {:.3f}%'.format(float(all_sec_error)*100/float(all_sec_total)))
+"""
 ##########################two hop###################################
 
 
@@ -245,8 +260,6 @@ print("RC方法有相同資源的問題 : " , result[14])
 #print(vec)
 """
 ##########################mode 4################################### 
-
-
 
 ###simulation###
 
