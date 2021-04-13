@@ -78,7 +78,7 @@ for x in c:
 
 # os.remove("check.text")
 
-time = int(0)
+time = int(192739)
 test = 0
 end_time = int(100000)
 result = []
@@ -97,8 +97,9 @@ temp_total = [0]*(parameter.vec_num*2)
 sec_temp_error = [0]*(parameter.vec_num*2)
 sec_temp_total = [0]*(parameter.vec_num*2)
 end_time = 0
+vec_local_data = [[0 for i in range (120)] , [1 for i in range (120)]]
 
-for file_count in range(1,4962):
+for file_count in range(2000,4962):
 
     dom = get_data.get_data("split/"+str(file_count)+".xml")
     c = dom.findall('waypoint')
@@ -114,10 +115,11 @@ for file_count in range(1,4962):
     
         for x in c:
                 if  int(x.find('time').text)== time:
-                    vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text
+                    vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text 
                     
-        result =  dym.main(vec , time)
+        result =  dym.main(vec , time , vec_local_data)
         time = time +1
+        vec_local_data = result
 
 
 ########################## dymnamic method ################################### 
