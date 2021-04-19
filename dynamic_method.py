@@ -1,5 +1,6 @@
 from math import hypot , floor  , ceil
 import parameter
+import dynamic_select_resource as select
 
 vec_per = []
 vec_all = []
@@ -17,12 +18,12 @@ for x in range(parameter.vec_num*2):    #初始化list
 ####parammeter####
 
 global total_resource 
-total_resource = 400
+total_resource = 50
 
 ####parammeter####
 
 
-def main(vec , time , vec_local):
+def main(vec , time , vec_local , error_data):
     vec_local_data = vec_local
     vec_all = vec
     vec_per = add_vec_info(vec_all , vec_local_data)
@@ -33,27 +34,40 @@ def main(vec , time , vec_local):
     if time % 100 == 0:
         print(time , ": ")
     for x in vec_per:
-        high_boo=" "
-        low_boo=" "
-        get_method_parameter(x,vec_per)
-        high_pool = [ 0 , floor(re_pool_allocation(x)[0])]
-        low_pool = [ 400 - floor(re_pool_allocation(x)[1]) + 1, 400]
-        normal_pool = [(floor(re_pool_allocation(x)[0])+ 1) ,400-floor(re_pool_allocation(x)[1])]
-        # print(high_pool ," / ",normal_pool , " / " , low_pool )
-        if x["speed"] > x["ave_speed"]:
-            high_boo = get_high_status(x , vec_per)
-        else :
-            low_boo = get_low_status(x , vec_per)
-        if high_boo == "yes":
-            print("high")
-        elif low_boo == "yes":
-            print("low")
-        else:
-            print("normal")
-
-    for x in vec_per:
+        for y in x["in_range"]:
+            if x["direction"] == vec_per[y]["direction"]:
+                if vec_per[y]["status"] == "normal":
+                    high_boo=""
+                    low_boo=""
+                    get_method_parameter(x,vec_per)
+                    high_pool = [ 0 , floor(re_pool_allocation(x)[0])]
+                    low_pool = [ total_resource - floor(re_pool_allocation(x)[1]) + 1, total_resource-1]
+                    normal_pool = [(floor(re_pool_allocation(x)[0])+ 1) ,total_resource-floor(re_pool_allocation(x)[1])]
+                    # print(high_pool ," / ",normal_pool , " / " , low_pool )
+                    if x["speed"] > x["ave_speed"]:
+                        high_boo = get_high_status(x , vec_per)
+                    else :
+                        low_boo = get_low_status(x , vec_per)
+                    if high_boo == "yes":
+                        x["status"] = "high"
+                        x["resource_pool"] = high_pool
+                    elif low_boo == "yes":
+                        x["status"] = "low"
+                        x["resource_pool"] = low_pool
+                    else:
+                        x["status"] = "normal"
+                        x["resource_pool"] = normal_pool
+    result = select.main(vec_per , time , error_data)
+    error_list = result[0]
+    vec_return = result[1]
+    for x in vec_return:
         vec_local_data[0][x["id"]] = x["history_ave_speed"]
         vec_local_data[1][x["id"]] = x["speed_counter"] +1 
+        vec_local_data[2][x["id"]] = x["resource"]
+        vec_local_data[3][x["id"]] = x["reselected_counter"]
+        vec_local_data[4][x["id"]] = x["sensing_resource"]
+        vec_local_data[5][x["id"]] = x["status"]
+        vec_local_data[6][x["id"]] = x["resource_pool"]
 
     # if time % 100 ==0:
     #     print(time , " : ")
@@ -61,8 +75,7 @@ def main(vec , time , vec_local):
     #         print(x["position"] ," / " , x["ave_speed"] , " / ", x["history_ave_speed"] ," / ", x["higher_ave"]," / " , x["higher_sum"])
             
     vec_per = []
-
-    return vec_local_data
+    return vec_local_data , error_list
 
 def add_vec_info(vec_all , vec_local_data):
     vec_per = []
@@ -78,7 +91,7 @@ def add_vec_info(vec_all , vec_local_data):
                                  "xpos"  : float(vec_all[x][1]),
                                  "ypos"  : float(vec_all[x][2]),
                                  "direction" : temp_dir,
-                                 "status" : status_list[int(x)],
+                                 "status" : vec_local_data[5][int(x)],
                                  "in_range" : [],
                                  "inrange_dis" : {},
                                  "position" : -1,
@@ -89,11 +102,13 @@ def add_vec_info(vec_all , vec_local_data):
                                  "higher_sum" : 0,
                                  "lower_sum" : 0,
                                  "number_same_direction" : 0,
-                                #  "sensing_resource" :sen_all_re[int(x)],
-                                #  "packet_resource" : [],
-                                #  "resource" : resource_list[int(x)],
-                                #  "tran_boo" : 0,
-                                #  "reselected_counter" : rc_list[int(x)],                                 
+                                 "resource_pool" : vec_local_data[6][int(x)],
+                                 "resource_dis" : [ 0 for i in range(total_resource)],
+                                 "sensing_resource" :vec_local_data[4][int(x)],
+                                 "packet_resource" : [],
+                                 "resource" : vec_local_data[2][int(x)],
+                                 "tran_boo" : 0,
+                                 "reselected_counter" : vec_local_data[3][int(x)],                                 
                                 }
                                 )
 
@@ -148,6 +163,8 @@ def get_method_parameter(vec , vec_per):
                 higher_sum = higher_sum + (vec_per[x]["speed"] - vec["ave_speed"])
             else :
                 lower_sum = lower_sum + abs(vec_per[x]["speed"] - vec["ave_speed"])
+    if vec["speed"] < vec["ave_speed"]:
+        higher_counter = higher_counter -1
     vec["higher_ave"] = higher_counter
     vec["higher_sum"] = higher_sum
     vec["loewwr_sum"] = lower_sum
@@ -159,6 +176,8 @@ def vec_in_range(vec_cur , vec_per):     #計算範圍內的車輛
     inrange_dis = {}
     for y in range(0 , len(vec_per)):
         dis = hypot(vec_per[y]["xpos"] - vec_cur["xpos"] , vec_per[y]["ypos"] - vec_cur["ypos"])
+        if dis > vec_cur["resource_dis"][vec_per[y]["resource"]]:
+            vec_cur["resource_dis"][vec_per[y]["resource"]] = dis
         if 0< dis < 300 :
             inragne_list.append(y)
             inrange_dis[y]= dis
@@ -211,6 +230,3 @@ def get_low_status(vec , vec_per):
         return "yes"
     else:
         return "no"
-
-def status_judge():
-    print("這邊放公式")

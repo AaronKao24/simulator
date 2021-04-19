@@ -78,9 +78,10 @@ for x in c:
 
 # os.remove("check.text")
 
-time = int(192739)
+time = int(0)
 test = 0
 end_time = int(100000)
+total_resource = 50
 result = []
 error_count = []
 total_count = []
@@ -97,35 +98,82 @@ temp_total = [0]*(parameter.vec_num*2)
 sec_temp_error = [0]*(parameter.vec_num*2)
 sec_temp_total = [0]*(parameter.vec_num*2)
 end_time = 0
-vec_local_data = [[0 for i in range (120)] , [1 for i in range (120)]]
+error_data = [[0 for i in range(120)] , [0 for i in range(120)] , [0 for i in range(120)] , [0 for i in range(120)]]
+vec_local_data = [[0 for i in range (120)] , [1 for i in range (120)] ,[-1 for i in range (120)] , [0 for i in range (120)] , [[[] for i in range(0,10)] for x in range(120)] , ["normal" for i in range (120)] , [[0,total_resource] for i in range (120)]]
 
-for file_count in range(2000,4962):
+for file_count in range(1,4962):
 
     dom = get_data.get_data("split/"+str(file_count)+".xml")
     c = dom.findall('waypoint')
-
     realtime = dom.findall('waypoint/time')
     end_time_list = dom.findall('destroy/time')
     if len(end_time_list):
         break                           #判斷是否有車輛結束，有的話跳出迴圈
     while time <= int(realtime[-1].text):
-
-
 ########################## dymnamic method ################################### 
     
         for x in c:
-                if  int(x.find('time').text)== time:
-                    vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text 
+            if  int(x.find('time').text)== time:
+                vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text 
                     
-        result =  dym.main(vec , time , vec_local_data)
+        result_final =  dym.main(vec , time , vec_local_data , error_data)
+        error_data = result_final[1]
+        vec_local_data = result_final[0]
+        result = result_final[1]
+
+        if time % 10000 ==0:
+            te=0
+            tt=0
+            ste=0
+            stt=0
+            for x in range(parameter.vec_num*2):
+                te = te + (result[0][x] - temp_error[x])
+                tt = tt + (result[1][x] - temp_total[x])
+                ste = ste + (result[2][x] - sec_temp_error[x])
+                stt = stt + (result[3][x] - sec_temp_total[x])
+                temp_error[x] = result[0][x]
+                temp_total[x] = result[1][x]
+                sec_temp_error[x] = result[2][x]
+                sec_temp_total[x] = result[3][x]
+            print(te , " : " ,tt, " : ",ste, " : ",stt )
+            if tt !=0:
+                print('te: {} tt: {}\nste: {}  stt:{}'.format(te,tt,ste,stt))
+                print('{} error percent : {:.3f}%'.format(time , float(te)*100/float(tt)))
+                print('{} second error percent : {:.3f}%'.format(time , float(ste)*100/float(stt)))
+
         time = time +1
-        vec_local_data = result
+
+#######最後一波檢測#########
+te=0
+tt=0
+for x in range(parameter.vec_num*2):
+    te = te + (result[0][x] - temp_error[x])
+    tt = tt + (result[1][x] - temp_total[x])
+    temp_error[x] = result[0][x]
+    temp_total[x] = result[1][x]
+if tt != 0:
+    print('{} error percent : {:.3f}%'.format(time , float(te)*100/float(tt)))
+######最後一波檢測#########
+error_count = result[0]
+total_count = result[1]
+sec_error_count = result[2]
+sec_total_count = result[3]
+
+for x in range(parameter.vec_num*2):
+    all_error = all_error + error_count[x]
+    all_total = all_total + total_count[x]
+    all_sec_error += sec_error_count[x]
+    all_sec_total += sec_total_count[x]
+    if total_count[x]>0:
+        print('{} : {:.3f}%'.format(x , float(error_count[x])*100 / float(total_count[x])))
+print('total error percent : {:.3f}%'.format(float(all_error)*100/float(all_total)))
+print('total error percent : {:.3f}%'.format(float(all_sec_error)*100/float(all_sec_total)))
 
 
 ########################## dymnamic method ################################### 
 
 ##########################two hop###################################
-        """
+"""
         for x in c:
             if  int(x.find('time').text)== time:
                 vec[x.find('nodeid').text] = x.find('speed').text , x.find('destination/xpos').text , x.find('destination/ypos').text , x.find('time').text

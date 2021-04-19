@@ -285,7 +285,7 @@ def select_resource(vec_id):
     global re_error
     for x in range(0,50):
         add_boo = 1
-        for y in range(0,9):
+        for y in range(0,10):
             if x in vec_per[vec_id]["sensing_resource"][y]:
                 add_boo = 0
         if add_boo == 1:
