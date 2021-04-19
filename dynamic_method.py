@@ -60,6 +60,7 @@ def main(vec , time , vec_local , error_data):
     result = select.main(vec_per , time , error_data)
     error_list = result[0]
     vec_return = result[1]
+
     for x in vec_return:
         vec_local_data[0][x["id"]] = x["history_ave_speed"]
         vec_local_data[1][x["id"]] = x["speed_counter"] +1 
@@ -108,7 +109,8 @@ def add_vec_info(vec_all , vec_local_data):
                                  "packet_resource" : [],
                                  "resource" : vec_local_data[2][int(x)],
                                  "tran_boo" : 0,
-                                 "reselected_counter" : vec_local_data[3][int(x)],                                 
+                                 "reselected_counter" : vec_local_data[3][int(x)],    
+                                 "sensing_special" : [],                             
                                 }
                                 )
 

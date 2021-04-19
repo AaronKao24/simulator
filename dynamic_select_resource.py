@@ -32,6 +32,9 @@ def main(vec_info , time , error_data):
         error_boo_tra = 0
         if vec["tran_boo"] == 1:
             for y in vec["in_range"]:
+                if vec["direction"] == vec_per[y]["direction"]:
+                    if vec_per[y]["status"] != "normal":
+                        vec["sensing_special"].append(vec_per[y]["resource"])
                 ###傳輸有錯率###
                 error_boo = cj.error_main(vec_per[y]["packet_resource"] , vec["resource"])
                 if error_boo == 1:
@@ -48,6 +51,9 @@ def main(vec_info , time , error_data):
     error_list = [error_count , total_count, sec_error_count , sec_total_count]
     return error_list , vec_per
 def get_resource(vec):
+    f = open("check.text" , 'a')
+    print(vec["id"] , " : ","status : " , vec["status"] , " pool : " , vec["resource_pool"]  ,file = f)
+    f.close()
     if vec["reselected_counter"] == 0:
         if vec["status"] == "normal":
             select_resource(vec)
