@@ -81,7 +81,7 @@ for x in c:
 time = int(0)
 test = 0
 end_time = int(100000)
-total_resource = 50
+total_resource = 400
 result = []
 error_count = []
 total_count = []
@@ -99,7 +99,7 @@ sec_temp_error = [0]*(parameter.vec_num*2)
 sec_temp_total = [0]*(parameter.vec_num*2)
 end_time = 0
 error_data = [[0 for i in range(120)] , [0 for i in range(120)] , [0 for i in range(120)] , [0 for i in range(120)]]
-vec_local_data = [[0 for i in range (120)] , [1 for i in range (120)] ,[-1 for i in range (120)] , [0 for i in range (120)] , [[[] for i in range(0,10)] for x in range(120)] , ["normal" for i in range (120)] , [[0,total_resource] for i in range (120)]]
+vec_local_data = [[0 for i in range (120)] , [1 for i in range (120)] ,[-1 for i in range (120)] , [0 for i in range (120)] , [[[] for i in range(0,10)] for x in range(120)] , ["normal" for i in range (120)] , [[0,total_resource] for i in range (120)] , [[] for i in range (120)]]
 
 for file_count in range(1,4962):
 

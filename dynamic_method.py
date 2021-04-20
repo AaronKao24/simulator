@@ -4,24 +4,13 @@ import dynamic_select_resource as select
 
 vec_per = []
 vec_all = []
-status_list = []            #車輛本身狀態
-vec_infront_list = []   #前方車的list
-his_ave_speed = []      #算術平均車速
-his_times = []
 
-
-for x in range(parameter.vec_num*2):    #初始化list
-    status_list.insert(x , "normal")        #初始的狀態都設定成常態
-    vec_infront_list.insert(x , [])
-    his_ave_speed.insert(x , 0)
-    his_times.insert(x,0)
 ####parammeter####
 
 global total_resource 
-total_resource = 50
+total_resource = 400
 
 ####parammeter####
-
 
 def main(vec , time , vec_local , error_data):
     vec_local_data = vec_local
@@ -69,6 +58,7 @@ def main(vec , time , vec_local , error_data):
         vec_local_data[4][x["id"]] = x["sensing_resource"]
         vec_local_data[5][x["id"]] = x["status"]
         vec_local_data[6][x["id"]] = x["resource_pool"]
+        vec_local_data[7][x["id"]] = x["sensing_special"]
 
     # if time % 100 ==0:
     #     print(time , " : ")
@@ -110,7 +100,7 @@ def add_vec_info(vec_all , vec_local_data):
                                  "resource" : vec_local_data[2][int(x)],
                                  "tran_boo" : 0,
                                  "reselected_counter" : vec_local_data[3][int(x)],    
-                                 "sensing_special" : [],                             
+                                 "sensing_special" : vec_local_data[7][int(x)],                             
                                 }
                                 )
 

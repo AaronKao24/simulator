@@ -4,7 +4,7 @@ import collision_judge as cj
 from math import ceil
 
 global total_resource
-total_resource = 50
+total_resource = 400
 
 def main(vec_info , time , error_data):
     
@@ -33,8 +33,14 @@ def main(vec_info , time , error_data):
         if vec["tran_boo"] == 1:
             for y in vec["in_range"]:
                 if vec["direction"] == vec_per[y]["direction"]:
-                    if vec_per[y]["status"] != "normal":
-                        vec["sensing_special"].append(vec_per[y]["resource"])
+
+                    if vec_per[y]["resource"] in vec["sensing_special"]:
+                        vec_per[y]["reselected_counter"] = 0
+                    vec["sensing_special"] = []
+
+                    if vec["status"] != "normal":
+                        vec_per[y]["sensing_special"].append(vec["resource"])
+
                 ###傳輸有錯率###
                 error_boo = cj.error_main(vec_per[y]["packet_resource"] , vec["resource"])
                 if error_boo == 1:
